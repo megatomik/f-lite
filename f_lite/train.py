@@ -5,6 +5,7 @@ import math
 import os
 import random
 import time
+import json
 
 import numpy as np
 import pandas as pd
@@ -30,6 +31,12 @@ from f_lite.precomputed_utils import (
     create_precomputed_data_loader,
     forward_with_precomputed_data,
 )
+
+
+def save_log_line(log, path="log_db.jsonl"):
+    with open(path, "a") as f:
+        json.dump(log, f)
+        f.write("\n")
 
 # Set up logger
 logger = get_logger(__name__)
@@ -1082,7 +1089,7 @@ def train(args):
                 global_step += 1
                 
                 # Logging
-                if global_step % 10 == 0 and accelerator.is_main_process:
+                if accelerator.is_main_process:
                     logs = {
                         "train/loss": total_loss.item(),
                         "train/diffusion_loss": diffusion_loss.item(),
@@ -1090,6 +1097,8 @@ def train(args):
                         "train/epoch": epoch,
                         "train/step": global_step,
                     }
+
+                    save_log_line(logs, f"{args.train_batch_size}bs_{args.resolution}px_{args.learning_rate}lr.jsonl")
                      
                     # Log to all trackers
                     accelerator.log(logs, step=global_step)
@@ -1102,7 +1111,7 @@ def train(args):
                     }) 
                 
                 # Sample images
-                if global_step % args.sample_every == 0 and accelerator.is_main_process:
+                if global_step % (4 * args.sample_every // args.train_batch_size) == 0 and accelerator.is_main_process:
                     # For sampling, we need VAE and text encoder
                     temp_vae = None
                     temp_text_encoder = None
