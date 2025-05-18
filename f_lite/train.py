@@ -635,7 +635,7 @@ def sample_images(
             
             # Initialize latents with correct channel count (16)
             batch_size = 1
-            generator = torch.Generator(device=device).manual_seed(global_step + i)
+            generator = torch.Generator(device=device).manual_seed(0)
             
             latent_height = image_height // 8
             latent_width = image_width // 8
