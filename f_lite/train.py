@@ -5,7 +5,6 @@ import math
 import os
 import random
 import time
-import json
 
 import numpy as np
 import pandas as pd
@@ -31,13 +30,10 @@ from f_lite.precomputed_utils import (
     create_precomputed_data_loader,
     forward_with_precomputed_data,
 )
-
-
 def save_log_line(log, path="log_db.jsonl"):
     with open(path, "a") as f:
         json.dump(log, f)
         f.write("\n")
-
 # Set up logger
 logger = get_logger(__name__)
 
@@ -635,7 +631,7 @@ def sample_images(
             
             # Initialize latents with correct channel count (16)
             batch_size = 1
-            generator = torch.Generator(device=device).manual_seed(0)
+            generator = torch.Generator(device=device).manual_seed(global_step + i)
             
             latent_height = image_height // 8
             latent_width = image_width // 8
@@ -1097,11 +1093,12 @@ def train(args):
                         "train/epoch": epoch,
                         "train/step": global_step,
                     }
-
-                    save_log_line(logs, f"{args.train_batch_size}bs_{args.resolution}px_{args.learning_rate}lr.jsonl")
                      
                     # Log to all trackers
                     accelerator.log(logs, step=global_step)
+
+                    save_log_line(logs, f"{args.train_batch_size}bs_{args.resolution}px_{args.learning_rate}lr.jsonl")
+
                     
                     # Update progress bar
                     progress_bar.set_postfix({
