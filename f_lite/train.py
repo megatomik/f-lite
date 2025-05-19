@@ -1061,6 +1061,7 @@ def train(args):
     if aspect_ratio_map and '1.0' in aspect_ratio_map: # If 1:1 exists in map, use it
         square_dims = aspect_ratio_map['1.0']
         sample_res_h, sample_res_w = int(square_dims[0]), int(square_dims[1])
+    sample_res_h, sample_res_w = 768, 1280
     logger.info(f"Sample images will be generated at {sample_res_h}x{sample_res_w}")
 
 
