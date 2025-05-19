@@ -760,7 +760,7 @@ def sample_images(
             
             batch_size = 1 # Sample one image at a time
             # Use a consistent seed for each image but varied by global_step and prompt index
-            generator = torch.Generator(device=device).manual_seed(args.seed + global_step + i if args.seed else global_step + i)
+            generator = torch.Generator(device=device).manual_seed(args.seed if args.seed else global_step + i)
             
             # VAE downsampling factor is typically 8
             vae_scale_factor = 8 
