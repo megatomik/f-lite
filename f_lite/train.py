@@ -30,7 +30,11 @@ from f_lite.precomputed_utils import (
     create_precomputed_data_loader,
     forward_with_precomputed_data,
 )
-
+import json
+def save_log_line(log, path="log_db.jsonl"):
+    with open(path, "a") as f:
+        json.dump(log, f)
+        f.write("\n")
 # Set up logger
 logger = get_logger(__name__)
 
@@ -628,7 +632,7 @@ def sample_images(
             
             # Initialize latents with correct channel count (16)
             batch_size = 1
-            generator = torch.Generator(device=device).manual_seed(global_step + i)
+            generator = torch.Generator(device=device).manual_seed(0)
             
             latent_height = image_height // 8
             latent_width = image_width // 8
@@ -681,7 +685,7 @@ def sample_images(
             # Convert to PIL and save
             pil_image = Image.fromarray(image)
             prompt_slug = prompt[:40].replace(" ", "_").replace(".", "").replace(",", "")
-            image_path = os.path.join(samples_dir, f"sample_{global_step}_{i}_{prompt_slug}.png")
+            image_path = os.path.join(samples_dir, f"sample_{global_step}_{i}_{prompt_slug}_{image_width}_{image_length}.png")
             pil_image.save(image_path)
              
     # Restore original training state
@@ -1082,7 +1086,7 @@ def train(args):
                 global_step += 1
                 
                 # Logging
-                if global_step % 10 == 0 and accelerator.is_main_process:
+                if accelerator.is_main_process:
                     logs = {
                         "train/loss": total_loss.item(),
                         "train/diffusion_loss": diffusion_loss.item(),
@@ -1093,7 +1097,7 @@ def train(args):
                      
                     # Log to all trackers
                     accelerator.log(logs, step=global_step)
-                    
+                    save_log_line(logs, f"{args.train_batch_size}bs_{args.resolution}px_{args.learning_rate}lr.jsonl")
                     # Update progress bar
                     progress_bar.set_postfix({
                         "loss": f"{total_loss.item():.4f}",
@@ -1149,6 +1153,19 @@ def train(args):
                             prompts=None,  # Use default prompts as fallback
                             image_width=1024,
                             image_height=1024,
+                            prompts_per_gpu=2,
+                            prompts_file=args.sample_prompts_file,
+                        )            
+                        sample_images(
+                            dit_model=accelerator.unwrap_model(dit_model),
+                            vae_model=vae_model,
+                            text_encoder=text_encoder,
+                            tokenizer=tokenizer,
+                            device=device,
+                            global_step=global_step,
+                            prompts=None,  # Use default prompts as fallback
+                            image_width=1280,
+                            image_height=1720,
                             prompts_per_gpu=2,
                             prompts_file=args.sample_prompts_file,
                         )
